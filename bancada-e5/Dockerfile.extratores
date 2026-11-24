@@ -1,0 +1,47 @@
+# MemoCore — Etapa 5, bancada E5.1: IMAGEM DE CONTAINER CANDIDATA
+# dos extratores da mastigação (plano §3, passo E5.1).
+#
+# ESTADO HONESTO: esta imagem NÃO foi construída nesta bancada — a
+# VM local não tem Docker/Podman (verificado 2026-11-24). É a
+# DEFINIÇÃO candidata + análise (EXTRATORES-BANCADA-E5-01.md). A
+# construção e a medição (tamanho, cold-start) acontecem onde houver
+# motor de containers — na conta da Larissa, após o pré-voo §1.2 do
+# plano confirmar Containers disponíveis, com nome de bancada e fora
+# do Worker `orvalumi`.
+#
+# Envelope alvo [documentado no plano]: Cloudflare Containers
+# standard-4 = 4 vCPU / 12 GiB RAM / 20 GB de disco. A imagem tem de
+# caber no disco com folga para o segmento extraído (≤ 20 GB).
+#
+# Conteúdo (os extratores do desenho, plano §3 E5.1):
+#   Apache Tika (jar, sobre JRE) · LibreOffice headless ·
+#   Tesseract OCR (pt + en) · PyMuPDF + pdfplumber · ffmpeg ·
+#   poppler-utils (pdftotext — o extrator PDF mais rápido medido
+#   nesta bancada) · leitor por faixas da casa (Node 24).
+
+FROM python:3.12-slim-bookworm
+
+# Versões fixadas onde a bancada as conhece; o checksum do Tika é
+# verificado contra o .sha512 oficial NO BUILD — nunca escrito à mão.
+ARG TIKA_VERSION=3.2.3
+ARG NODE_VERSION=24
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-draw \
+      tesseract-ocr tesseract-ocr-por tesseract-ocr-eng \
+      ffmpeg poppler-utils \
+      default-jre-headless \
+      curl ca-certificates file unzip xz-utils \
+    && curl -fsSL "https://archive.apache.org/dist/tika/${TIKA_VERSION}/tika-app-${TIKA_VERSION}.jar" -o /opt/tika.jar \
+    && curl -fsSL "https://archive.apache.org/dist/tika/${TIKA_VERSION}/tika-app-${TIKA_VERSION}.jar.sha512" -o /tmp/tika.sha512 \
+    && (cd /opt && sha512sum -c /tmp/tika.sha512) \
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* /tmp/tika.sha512
+
+RUN pip install --no-cache-dir pymupdf pdfplumber
+
+# O job de mastigação (E5.4) entra depois; por omissão a imagem só
+# prova que os extratores respondem (fumaça de versões).
+WORKDIR /trabalho
+CMD ["bash", "-lc", "java -jar /opt/tika.jar --version; soffice --version; tesseract --version | head -1; ffmpeg -version | head -1; pdftotext -v 2>&1 | head -1; python3 -c \"import pymupdf, pdfplumber; print('pymupdf', pymupdf.__version__)\"; node --version"]

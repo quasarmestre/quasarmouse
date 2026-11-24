@@ -1,0 +1,20 @@
+{
+  "name": "memocore-bancada-e5",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [{ "name": "BANCADA", "class_name": "BancadaContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BancadaContainer"] }],
+  "r2_buckets": [{ "binding": "DERIVADOS", "bucket_name": "orvalumi-derivados" }],
+  "containers": [
+    {
+      "class_name": "BancadaContainer",
+      "image": "./Dockerfile.extratores",
+      "instance_type": "standard-4",
+      "max_instances": 1
+    }
+  ],
+  "observability": { "logs": { "enabled": true } }
+}

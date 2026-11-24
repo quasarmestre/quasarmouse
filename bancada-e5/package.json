@@ -1,0 +1,8 @@
+{
+  "name": "memocore-bancada-e5",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Bancada descartavel da E5.1 (cupom 61) — teste de publicacao de Container. NAO e producao.",
+  "dependencies": { "@cloudflare/containers": "0.3.7" },
+  "devDependencies": { "wrangler": "^4.168.0" }
+}
